@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.microideal.shiro.mapper.AuthorityMapper">
+
+    <resultMap id="BaseResultMap" type="com.microideal.shiro.model.Authority" >
+        <id column="id" property="id" />
+        <result column="name" property="name"  />
+        <result column="parentId" property="parentId"  />
+        <result column="sort" property="sort"  />
+        <result column="type" property="type" />
+        <result column="value" property="value"  />
+    </resultMap>
+
+    <select id="queryAll" resultType="com.microideal.shiro.model.Authority">
+        SELECT id,`name`,`value`,parentId,`type`,sort
+        FROM t_authority
+        ORDER BY sort ASC
+    </select>
+
+    <select id="loadUserAuthority" parameterType="java.util.HashMap" resultType="com.microideal.shiro.model.Authority">
+        SELECT ta.id,ta.name,ta.parentId,ta.value
+        FROM t_authority ta LEFT JOIN t_role_authorities tra
+        ON ta.id = tra.authority_id
+        LEFT JOIN t_user_roles tur
+        ON tra.role_id = tur.role_id
+        WHERE tur.user_id = #{userId}
+        <if test="type != null">
+            AND ta.type= #{type}
+        </if>
+        GROUP BY ta.id
+        ORDER BY ta.sort ASC
+    </select>
+
+    <select id="queryRoleAuthorityWithSelectedByRoleId" parameterType="java.lang.Long" resultType="com.microideal.shiro.model.Authority">
+        SELECT a.id,a.name,a.parentId,a.value,a.type,a.sort,
+        (CASE WHEN EXISTS(SELECT 1 FROM t_role_authorities ra WHERE ra.authority_id = a.id AND ra.role_id = #{roleId}) THEN 'true' ELSE 'false' END) AS checked
+        FROM t_authority a
+        ORDER BY a.sort ASC
+    </select>
+
+    <select id="queryListPage" parameterType="map" resultMap="BaseResultMap">
+        SELECT *
+        FROM t_authority
+        ORDER BY id
+        Limit ${start},${end}
+    </select>
+
+    <select id="queryListPageCount" resultType="int">
+        SELECT count(id)
+        FROM t_authority
+    </select>
+
+    <select id="queryRoleAuthorityCount" parameterType="java.lang.Long" resultType="int">
+        SELECT COUNT(*) FROM t_role_authorities WHERE authority_id = #{id}
+    </select>
+
+    <select id="queryByParentId" parameterType="java.lang.Long" resultMap="BaseResultMap">
+        SELECT * FROM t_authority WHERE parentId = #{parentId} ORDER  BY sort ASC
+    </select>
+
+</mapper>
